@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>إضافة جهاز</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; text-align: center; }
+        form { background: #fff; padding: 20px; display: inline-block; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input { padding: 10px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; width: 200px; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; background: #4CAF50; color: #fff; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>إضافة جهاز جديد</h1>
+    <form method="post" action="/add">
+        <input type="number" name="pc_number" placeholder="رقم الكمبيوتر" required><br>
+        <input type="text" name="name" placeholder="اسم الجهاز" required><br>
+        <input type="text" name="mac" placeholder="MAC"><br>
+        <input type="text" name="ip" placeholder="IP الجهاز"><br>
+        <button type="submit">إضافة الجهاز</button>
+    </form>
+    <br>
+    <a href="/devices">عرض جميع الأجهزة</a>
+</body>
+</html>

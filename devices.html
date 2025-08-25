@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>قائمة الأجهزة</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; text-align: center; }
+        table { margin: auto; border-collapse: collapse; width: 95%; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: center; }
+        th { background: #4CAF50; color: #fff; }
+        .status-bulb { display:inline-block; width:14px; height:14px; border-radius:50%; margin-right:8px; vertical-align:middle; transition:box-shadow .2s; }
+        .status-on { background:#4CAF50; box-shadow:0 0 8px rgba(76,175,80,0.7); }
+        .status-off { background:#c0c0c0; }
+        .controls button { padding:6px 10px; border:none; border-radius:6px; cursor:pointer; }
+        .start { background:#4CAF50; color:#fff; }
+        a.action { padding:6px 10px; border-radius:6px; text-decoration:none; color:#fff; background:#FFC107; }
+        #loading { margin:10px; color:#666; }
+    </style>
+</head>
+<body>
+    <h1>قائمة الأجهزة</h1>
+
+    <div id="loading">تحميل الحالات... يرجى الانتظار</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>رقم</th>
+                <th>الاسم</th>
+                <th>MAC</th>
+                <th>IP</th>
+                <th>الحالة</th>
+                <th>تحكم</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for device in devices %}
+            <tr>
+                <td>{{ device['pc_number'] }}</td>
+                <td>{{ device['name'] }}</td>
+                <td>{{ device['mac'] }}</td>
+                <td>{{ device['ip'] }}</td>
+                <td id="status-{{ device['id'] }}">
+                    <span class="status-bulb status-off" id="bulb-{{ device['id'] }}"></span>
+                </td>
+                <td class="controls">
+                    <button class="start" onclick="startDevice('{{ device['mac'] }}')">تشغيل</button>
+                    <a class="action" href="/edit/{{ device['id'] }}">تعديل</a>
+                    <a class="action" href="/delete/{{ device['id'] }}" style="background:#f44336">حذف</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+<script>
+const STATUS_INTERVAL = 10000; // 10s بين كل تحديثات (أبطأ = أقل ضغط)
+let statusTimer = null;
+
+async function fetchStatuses() {
+    try {
+        const res = await fetch('/api/statuses', {cache: 'no-store'});
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        document.getElementById('loading').style.display = 'none';
+        // تعيين الحالات
+        data.forEach(d => {
+            const bulb = document.getElementById(`bulb-${d.id}`);
+            if (!bulb) return;
+            if (d.status === 'online') {
+                bulb.classList.remove('status-off');
+                bulb.classList.add('status-on');
+            } else {
+                bulb.classList.remove('status-on');
+                bulb.classList.add('status-off');
+            }
+        });
+    } catch (e) {
+        console.error('update error', e);
+    }
+}
+
+function startStatusLoop() {
+    fetchStatuses();
+    if (statusTimer) clearInterval(statusTimer);
+    statusTimer = setInterval(fetchStatuses, STATUS_INTERVAL);
+}
+
+// WOL
+async function startDevice(mac) {
+    try {
+        await fetch(`/api/wol?mac=${encodeURIComponent(mac)}`);
+        // بعد الWOL ندّي الجهاز 4 ثواني علشان يقوم ثم نحدّث الحالة
+        setTimeout(fetchStatuses, 4000);
+    } catch (e) {
+        console.error('WOL err', e);
+    }
+}
+
+startStatusLoop();
+</script>
+</body>
+</html>
